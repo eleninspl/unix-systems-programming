@@ -168,8 +168,8 @@ int main(int argc, char *argv[]) {
 
     	if (pollfds[0].revents & POLLIN) {
 
-            char *input;
-            size_t input_size;
+            char *input = NULL;
+            size_t input_size = 0;
 			if (getline(&input, &input_size, stdin) == -1) {
     			perror("getline");
     			return 1;

@@ -103,25 +103,26 @@ A child takes the number, decrements it, waits 10 seconds to simulate work, and 
 ```bash
 cd lab3
 gcc -Wall lab3.c -o ask3
-./ask3 3 --round-robin
+./ask3 2 --round-robin
 ```
 
 ```
+help
+Type a number to send job to a child!
 12
-[Parent] [4120] Assigned 12 to child 0.
-[Child 0] [4121] Child received 12!
+[Parent] [81457] Assigned 12 to child 0.
+[Child 0] [81460] Child received 12!
 7
-[Parent] [4120] Assigned 7 to child 1.
-[Child 1] [4122] Child received 7!
-[Child 0] [4121] Child finished hard work, writing back 11.
-[Parent] [4120] Recieved 11 from child 0.
-[Child 1] [4122] Child finished hard work, writing back 6.
-[Parent] [4120] Recieved 6 from child 1.
+[Parent] [81457] Assigned 7 to child 1.
+[Child 1] [81461] Child received 7!
+[Child 0] [81460] Child finished hard work, writing back 11.
+[Parent] [81457] Recieved 11 from child 0.
+[Child 1] [81461] Child finished hard work, writing back 6.
+[Parent] [81457] Recieved 6 from child 1.
 exit
-[Parent] [4120] Child 0 with PID=4121 terminated successfully!
-[Parent] [4120] Child 1 with PID=4122 terminated successfully!
-[Parent] [4120] Child 2 with PID=4123 terminated successfully!
-[Parent] [4120] All children exited, terminating as well.
+[Parent] [81457] Child 0 with PID=81460 terminated successfully!
+[Parent] [81457] Child 1 with PID=81461 terminated successfully!
+[Parent] [81457] All children exited, terminating as well.
 ```
 
 ## Lab 4: TCP client
@@ -175,14 +176,12 @@ The course server is no longer online. To try the client, point `--host` and `--
 
 ## Known limitations
 
-The code is kept exactly as it was submitted. While writing this README, I reviewed it again and found the issues below. None of them affect the normal runs shown above, but they are worth knowing if you build on this code:
+The code is kept as it was submitted, apart from two one-line fixes: a missing `#include <sys/wait.h>` in lab 1, which newer GCC versions reject, and an uninitialised `getline` buffer in lab 3, which crashed on macOS. While writing this README, I reviewed the code again and found the issues below. None of them affect the normal runs shown above, but they are worth knowing if you build on this code:
 
-- **Lab 1** calls `wait` without including `<sys/wait.h>`. GCC 14 and later reject implicit function declarations, so add that include if the build fails. Also, the `write` error check compares a signed result with an unsigned length, so a failed write (`-1`) is not detected.
+- **Lab 1**'s `write` error check compares a signed result with an unsigned length, so a failed write (`-1`) is not detected.
 - **Labs 2 and 3** check the arguments before checking for `--help`, so `--help` prints the usage message but exits with code 1 instead of 0.
 - **Labs 3 and 4** use `\033[30m` as the "reset colour" code. That code sets the text to black, so on a dark terminal everything printed after a coloured message can be hard to read. The real reset code is `\033[0m`.
-- **Lab 3** passes an uninitialised pointer to `getline`. On Linux this usually happens to work, but on macOS the parent crashes on its first command. Other issues in lab 3:
-  - `./ask3 0` divides by zero.
-  - If standard input closes (Ctrl-D), the parent exits without terminating its children.
+- **Lab 3** divides by zero when started with `./ask3 0`. If standard input closes (Ctrl-D), the parent exits without terminating its children.
 - **Lab 2** replaces a child only if it exited normally. A child killed by a signal, for example `kill -9`, is not replaced. The handlers also call `printf`, which is not async-signal-safe. This is common in coursework, but production code would only set a flag inside the handler.
 - **Lab 4** copies `--host` into a buffer sized for the default host name. A longer name is truncated and left without a terminating NUL. The client also assumes that each `read` from the socket returns exactly one complete line.
 
